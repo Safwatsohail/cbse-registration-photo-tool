@@ -218,11 +218,13 @@ input {
 
 .sample-label strong {
   font-size: clamp(12px, 1.5vw, 15px);
+  color: #000000;
+  font-weight: 800;
 }
 
 .sample-label span {
   margin-top: 3px;
-  color: var(--muted);
+  color: #000000;
   font-size: clamp(11px, 1.3vw, 13px);
   font-weight: 700;
 }
