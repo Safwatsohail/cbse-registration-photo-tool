@@ -236,13 +236,13 @@ function drawLabel(size, labelHeight) {
   ctx.lineTo(size, y);
   ctx.stroke();
 
-  ctx.fillStyle = "#1d1d1f";
-  ctx.font = "700 17px Arial, sans-serif";
+  ctx.fillStyle = "#000000";
+  ctx.font = "800 17px Arial, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(truncateText(`NAME: ${name}`, size * 0.9), size / 2, y + 22);
+  ctx.fillText(truncateText(name, size * 0.9), size / 2, y + 22);
 
-  ctx.fillStyle = "#6e6e73";
+  ctx.fillStyle = "#000000";
   ctx.font = "700 13px Arial, sans-serif";
   ctx.fillText(truncateText(dateText, size * 0.9), size / 2, y + 42);
 }
