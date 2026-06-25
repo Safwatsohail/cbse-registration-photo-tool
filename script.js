@@ -18,6 +18,7 @@ const removeBgApiKeys = ["M4Lfte67G7x7ihWqKJppPSS5", "orFQhwPgFPKGsuueHQMx2t1x"]
 const maxBytes = 40 * 1024;
 const outputSize = 300;
 let sourceImage = null;
+let bgRemoved = false;
 let generatedBlob = null;
 
 photoDate.valueAsDate = new Date();
@@ -95,9 +96,11 @@ async function usePhotoFile(file) {
   fileMeta.textContent = `${file.name} • ${formatBytes(file.size)}`;
   openEditor();
 
+  bgRemoved = false;
   let processedFile = file;
   try {
     processedFile = await removeBackground(file);
+    bgRemoved = true;
   } catch (err) {
     console.warn("Background removal failed, using original:", err);
     statusText.textContent = "BG removal failed, using original.";
@@ -108,34 +111,21 @@ async function usePhotoFile(file) {
 }
 
 async function removeBackground(file) {
-  let lastError;
-  for (const apiKey of removeBgApiKeys) {
-    try {
-      const formData = new FormData();
-      formData.append("image_file", file);
-      formData.append("size", "auto");
-      formData.append("bg_color", "ffffff");
-      formData.append("format", "jpg");
+  const form = new FormData();
+  form.append("image_file", file);
 
-      const response = await fetch("https://api.remove.bg/v1.0/removebg", {
-        method: "POST",
-        headers: { "X-Api-Key": apiKey },
-        body: formData,
-      });
+  const res = await fetch("/api/remove-bg", {
+    method: "POST",
+    body: form,
+  });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err?.errors?.[0]?.title || `remove.bg error ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      return new File([blob], "bg-removed.jpg", { type: "image/jpeg" });
-    } catch (err) {
-      console.warn(`remove.bg key failed, trying next:`, err);
-      lastError = err;
-    }
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson?.error || `Proxy error ${res.status}`);
   }
-  throw lastError;
+
+  const blob = await res.blob();
+  return new File([blob], "bg-removed.jpg", { type: "image/jpeg" });
 }
 
 function openEditor() {
@@ -180,7 +170,7 @@ async function renderOutput() {
   ctx.drawImage(sourceImage, crop.x, crop.y, crop.w, crop.h, target.x, target.y, target.w, target.h);
   ctx.filter = "none";
 
-  softenBackgroundEdges(outputSize, photoHeight);
+  if (!bgRemoved) softenBackgroundEdges(outputSize, photoHeight);
   drawPhotoBorder(outputSize, photoHeight, padding);
   drawLabel(outputSize, labelHeight);
   ctx.restore();
