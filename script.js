@@ -14,7 +14,7 @@ const canvas = document.querySelector("#outputCanvas");
 const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
 const emailEndpoint = "https://formsubmit.co/ajax/safwat.technology@gmail.com";
-const removeBgApiKey = "M4Lfte67G7x7ihWqKJppPSS5";
+const removeBgApiKeys = ["M4Lfte67G7x7ihWqKJppPSS5", "orFQhwPgFPKGsuueHQMx2t1x"];
 const maxBytes = 40 * 1024;
 const outputSize = 300;
 let sourceImage = null;
@@ -108,25 +108,34 @@ async function usePhotoFile(file) {
 }
 
 async function removeBackground(file) {
-  const formData = new FormData();
-  formData.append("image_file", file);
-  formData.append("size", "auto");
-  formData.append("bg_color", "ffffff");
-  formData.append("format", "jpg");
+  let lastError;
+  for (const apiKey of removeBgApiKeys) {
+    try {
+      const formData = new FormData();
+      formData.append("image_file", file);
+      formData.append("size", "auto");
+      formData.append("bg_color", "ffffff");
+      formData.append("format", "jpg");
 
-  const response = await fetch("https://api.remove.bg/v1.0/removebg", {
-    method: "POST",
-    headers: { "X-Api-Key": removeBgApiKey },
-    body: formData,
-  });
+      const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+        method: "POST",
+        headers: { "X-Api-Key": apiKey },
+        body: formData,
+      });
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err?.errors?.[0]?.title || `remove.bg error ${response.status}`);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.errors?.[0]?.title || `remove.bg error ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      return new File([blob], "bg-removed.jpg", { type: "image/jpeg" });
+    } catch (err) {
+      console.warn(`remove.bg key failed, trying next:`, err);
+      lastError = err;
+    }
   }
-
-  const blob = await response.blob();
-  return new File([blob], "bg-removed.jpg", { type: "image/jpeg" });
+  throw lastError;
 }
 
 function openEditor() {
